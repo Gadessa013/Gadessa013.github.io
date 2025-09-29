@@ -3,180 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Collection of Classic Poems</title>
-    <!-- Tailwind CSS for styling -->
+    <title>Markdown Gallery</title>
+    <!-- Vitruvius's chosen materials: Tailwind CSS for beauty and Marked.js for utility -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* Custom font for the body */
+        /* A touch of custom masonry for our edifice */
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom font for poems for a more classic feel */
-        .poem-text {
-            font-family: 'Lora', serif;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        /* The fade effect for truncated card previews */
+        .preview-fade {
+            position: relative;
+            max-height: 200px;
+            overflow: hidden;
+        }
+        .preview-fade::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: linear-gradient(to bottom, transparent, white);
+        }
+        .dark .preview-fade::after {
+             background: linear-gradient(to bottom, transparent, #1f2937); /* bg-gray-800 */
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased">
 
-    <!-- Header Section -->
-    <header class="bg-white shadow-md">
-        <div class="container mx-auto px-6 py-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-900 tracking-tight">A Digital Anthology</h1>
-            <p class="mt-2 text-lg text-gray-600">A curated collection of timeless poems</p>
+    <!-- The Main Structure of our Digital Edifice -->
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- The Grand Entrance: Header and Search -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Markdown Gallery</h1>
+            <p class="mt-2 text-lg text-gray-600 dark:text-gray-400">A curated collection from a GitHub repository.</p>
+            <div class="mt-6 max-w-lg mx-auto">
+                <input type="text" id="search-bar" placeholder="Search posts by title..." class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
+            </div>
+        </header>
+
+        <!-- The Gallery Hall: Where the Posts are Displayed -->
+        <main id="gallery-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Loading indicator: The masons at work -->
+            <div id="loading-indicator" class="col-span-full text-center py-16">
+                 <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                <p class="mt-4 text-gray-600 dark:text-gray-400">Fetching scrolls from the repository...</p>
+            </div>
+        </main>
+
+        <!-- The Footer: Architect's Signature and Instructions -->
+        <footer class="text-center mt-12">
+            <p class="text-gray-500 dark:text-gray-400">
+                A creation by Vitruvius. 
+                <a href="#" id="instructions-link" class="text-blue-500 hover:underline">How to structure posts?</a>
+            </p>
+        </footer>
+
+    </div>
+
+    <!-- The Modal Viewer: A Chamber for Detailed Inspection -->
+    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div id="modal-content" class="prose dark:prose-invert max-w-none p-6 md:p-8 overflow-y-auto">
+                <!-- Rendered Markdown will be placed here -->
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+                <div id="reference-files-annex" class="mb-4">
+                    <!-- Links to reference files will appear here -->
+                </div>
+                <div class="flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                    <div class="flex space-x-4 mb-2 md:mb-0">
+                        <span id="word-count"></span>
+                        <span id="token-count"></span>
+                        <span id="file-count"></span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="copy-markdown-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Copy Markdown</button>
+                        <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Close</button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </header>
-
-    <!-- Main Content: Poems Grid -->
-    <main class="container mx-auto px-6 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-
-            <!-- Poem 1: "The Road Not Taken" -->
-            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">The Road Not Taken</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By Robert Frost</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>Two roads diverged in a yellow wood,<br>
-                    And sorry I could not travel both<br>
-                    And be one traveler, long I stood<br>
-                    And looked down one as far as I could<br>
-                    To where it bent in the undergrowth;</p>
-                    <br>
-                    <p>Then took the other, as just as fair,<br>
-                    And having perhaps the better claim,<br>
-                    Because it was grassy and wanted wear;<br>
-                    Though as for that the passing there<br>
-                    Had worn them really about the same,</p>
-                    <br>
-                    <p>And both that morning equally lay<br>
-                    In leaves no step had trodden black.<br>
-                    Oh, I kept the first for another day!<br>
-                    Yet knowing how way leads on to way,<br>
-                    I doubted if I should ever come back.</p>
-                    <br>
-                    <p>I shall be telling this with a sigh<br>
-                    Somewhere ages and ages hence:<br>
-                    Two roads diverged in a wood, and I—<br>
-                    I took the one less traveled by,<br>
-                    And that has made all the difference.</p>
+    </div>
+    
+    <!-- The Instructions Modal: A Guide for Fellow Builders -->
+    <div id="instructions-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-6 md:p-8 overflow-y-auto">
+                <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">How to Structure Posts</h2>
+                <div class="prose dark:prose-invert max-w-none">
+                    <p>To add content to this gallery, you must structure your files within the <code>/posts</code> directory of the configured GitHub repository.</p>
+                    <h4 class="font-semibold">1. Simple Post</h4>
+                    <p>A simple post is a single Markdown file placed directly inside the <code>/posts</code> directory.</p>
+                    <pre class="bg-gray-100 dark:bg-gray-700 p-2 rounded"><code>/posts
+  └── my-first-post.md</code></pre>
+                    
+                    <h4 class="font-semibold mt-4">2. Complex Post</h4>
+                    <p>A complex post is a folder within <code>/posts</code>. This folder must contain exactly one Markdown file, which will be treated as the main content. Any other files (images, PDFs, etc.) will be listed as downloadable reference files.</p>
+                    <p>Relative links to images within your Markdown (e.g., <code>![My Image](./diagram.png)</code>) will be automatically resolved.</p>
+                    <pre class="bg-gray-100 dark:bg-gray-700 p-2 rounded"><code>/posts
+  └── my-complex-project/
+      ├── main-article.md
+      ├── diagram.png
+      └── data-sheet.pdf</code></pre>
                 </div>
             </div>
-
-            <!-- Poem 2: "Ozymandias" -->
-            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">Ozymandias</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By Percy Bysshe Shelley</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>I met a traveller from an antique land,<br>
-                    Who said—“Two vast and trunkless legs of stone<br>
-                    Stand in the desert. . . . Near them, on the sand,<br>
-                    Half sunk a shattered visage lies, whose frown,<br>
-                    And wrinkled lip, and sneer of cold command,<br>
-                    Tell that its sculptor well those passions read<br>
-                    Which yet survive, stamped on these lifeless things,<br>
-                    The hand that mocked them, and the heart that fed;<br>
-                    And on the pedestal, these words appear:<br>
-                    My name is Ozymandias, King of Kings;<br>
-                    Look on my Works, ye Mighty, and despair!<br>
-                    Nothing beside remains. Round the decay<br>
-                    Of that colossal Wreck, boundless and bare<br>
-                    The lone and level sands stretch far away.”</p>
-                </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800 text-right">
+                <button id="close-instructions-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Close</button>
             </div>
-
-            <!-- Poem 3: "Hope is the thing with feathers" -->
-            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">“Hope” is the thing with feathers</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By Emily Dickinson</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>“Hope” is the thing with feathers -<br>
-                    That perches in the soul -<br>
-                    And sings the tune without the words -<br>
-                    And never stops - at all -</p>
-                    <br>
-                    <p>And sweetest - in the Gale - is heard -<br>
-                    And sore must be the storm -<br>
-                    That could abash the little Bird<br>
-                    That kept so many warm -</p>
-                    <br>
-                    <p>I’ve heard it in the chillest land -<br>
-                    And on the strangest Sea -<br>
-                    Yet - never - in Extremity,<br>
-                    It asked a crumb - of me.</p>
-                </div>
-            </div>
-
-            <!-- Poem 4: "When I Heard the Learn’d Astronomer" -->
-            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">When I Heard the Learn’d Astronomer</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By Walt Whitman</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>When I heard the learn’d astronomer,<br>
-                    When the proofs, the figures, were ranged in columns before me,<br>
-                    When I was shown the charts and diagrams, to add, divide, and measure them,<br>
-                    When I sitting heard the astronomer where he lectured with much applause in the lecture-room,<br>
-                    How soon unaccountable I became tired and sick,<br>
-                    Till rising and gliding out I wander’d off by myself,<br>
-                    In the mystical moist night-air, and from time to time,<br>
-                    Look’d up in perfect silence at the stars.</p>
-                </div>
-            </div>
-
-            <!-- Poem 5: "Do not stand at my grave and weep" -->
-            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">Do not stand at my grave and weep</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By Mary Elizabeth Frye</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>Do not stand at my grave and weep<br>
-                    I am not there. I do not sleep.<br>
-                    I am a thousand winds that blow.<br>
-                    I am the diamond glints on snow.<br>
-                    I am the sunlight on ripened grain.<br>
-                    I am the gentle autumn rain.<br>
-                    When you awaken in the morning's hush<br>
-                    I am the swift uplifting rush<br>
-                    Of quiet birds in circled flight.<br>
-                    I am the soft stars that shine at night.<br>
-                    Do not stand at my grave and cry;<br>
-                    I am not there. I did not die.</p>
-                </div>
-            </div>
-
-             <!-- Poem 6: "Sonnet 18" -->
-             <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-bold mb-2">Sonnet 18</h2>
-                <h3 class="text-md italic text-gray-600 mb-6">By William Shakespeare</h3>
-                <div class="poem-text text-gray-700 leading-relaxed">
-                    <p>Shall I compare thee to a summer’s day?<br>
-                    Thou art more lovely and more temperate:<br>
-                    Rough winds do shake the darling buds of May,<br>
-                    And summer’s lease hath all too short a date;<br>
-                    Sometime too hot the eye of heaven shines,<br>
-                    And often is his gold complexion dimm'd;<br>
-                    And every fair from fair sometime declines,<br>
-                    By chance or nature’s changing course untrimm'd;<br>
-                    But thy eternal summer shall not fade,<br>
-                    Nor lose possession of that fair thou ow’st;<br>
-                    Nor shall death brag thou wander’st in his shade,<br>
-                    When in eternal lines to time thou grow’st:<br>
-                    So long as men can breathe or eyes can see,<br>
-                    So long lives this, and this gives life to thee.</p>
-                </div>
-            </div>
-
         </div>
-    </main>
+    </div>
 
-    <!-- Footer Section -->
-    <footer class="bg-white mt-12">
-        <div class="container mx-auto px-6 py-4 text-center text-gray-500">
-            <p>&copy; 2025 A Digital Anthology. All Rights Reserved.</p>
-        </div>
-    </footer>
 
+    <!-- The Engine of the Edifice: The JavaScript Framework -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // === CONFIGURATION: The architect's primary measurements ===
+            const GITHUB_USER = 'Gadessa013';
+            const GITHUB_REPO = 'Prompts';
+            const POSTS_DIR = 'posts';
+            // ==========================================================
+
+            const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${POSTS_DIR}`;
+
+            let allPosts = []; // A repository of all our processed scrolls
+            
+            const galleryGrid = document.getElementById('gallery-grid');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const searchBar = document.getElementById('search-bar');
+            
+            // Modal elements
+            const postModal = document.getElementById('post-modal');
+            const modalContent = document.getElementById('modal-content');
+            const wordCountEl = document.getElementById('word-count');
+            const tokenCountEl = document.getElementById('token-count');
+            const fileCountEl = document.getElementById('file-count');
+            const copyMarkdownBtn = document.getElementById('copy-markdown-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const refFilesAnnex = document.getElementById('reference-files-annex');
+            
+            // Instructions Modal elements
+            const instructionsModal = document.getElementById('instructions-modal');
+            const instructionsLink = document.getElementById('instructions-link');
+            const closeInstructionsBtn = document.getElementById('close-instructions-btn');
+
+            /**
+             * Fetches the content from the GitHub repository and processes each item.
+             * This is the master function that orchestrates the construction.
+             */
+            async function fetchAndBuildGallery() {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) {
+                        throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+                    }
+                    const items = await response.json();
+                    
+                    const postPromises = items.map(processRepoItem);
+                    allPosts = await Promise.all(postPromises);
+                    allPosts = allPosts.filter(p => p !== null); // Filter out any failed items
+
+                    renderGallery(allPosts);
+
+                } catch (error) {
+                    console.error("Error building the gallery:", error);
+                    galleryGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Failed to load posts. Check the browser console for details.</p>`;
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            /**
+             * Processes a single item from the repository (file or directory).
+             * Determines if it's a simple or complex post and gathers its data.
+             */
+            async function processRepoItem(item) {
+                if (item.type === 'file' && item.name.endsWith('.md')) {
+                    // It's a Simple Post
+                    try {
+                        const content = await fetch(item.download_url).then(res => res.text());
+                        return {
+                            type: 'simple',
+                            title: item.name.replace('.md', ''),
+                            rawContent: content,
+                            path: item.path,
+                            downloadUrl: item.download_url,
+                            references: []
+                        };
+                    } catch (error) {
+                        console.error(`Failed to fetch content for ${item.name}:`, error);
+                        return null;
+                    }
+
+                } else if (item.type === 'dir') {
+                    // It's a Complex Post
+                    try {
+                        const dirContents = await fetch(item.url).then(res => res.json());
+                        const markdownFile = dirContents.find(f => f.name.endsWith('.md'));
+                        
+                        if (!markdownFile) return null; // Skip folders without a .md file
+
+                        const content = await fetch(markdownFile.download_url).then(res => res.text());
+                        const references = dirContents.filter(f => !f.name.endsWith('.md'));
+
+                        return {
+                            type: 'complex',
+                            title: item.name,
+                            rawContent: content,
+                            path: item.path,
+                            downloadUrl: markdownFile.download_url,
+                            references: references.map(ref => ({ name: ref.name, url: ref.download_url, path: ref.path }))
+                        };
+                    } catch (error) {
+                         console.error(`Failed to process directory ${item.name}:`, error);
+                        return null;
+                    }
+                }
+                return null; // Ignore other file types
+            }
+
+            /**
+             * Renders the gallery of posts onto the page.
+             * This function lays the stones in the gallery hall.
+             */
+            function renderGallery(posts) {
+                galleryGrid.innerHTML = ''; // Clear previous content
+                if (posts.length === 0) {
+                     galleryGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">No matching posts found.</p>`;
+                     return;
+                }
+
+                posts.forEach(post => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col';
+                    
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'p-6 flex-grow';
+
+                    const title = document.createElement('h2');
+                    title.className = 'text-xl font-bold mb-2 text-gray-900 dark:text-white';
+                    title.textContent = post.title.replace(/[-_]/g, ' ');
+
+                    const preview = document.createElement('div');
+                    preview.className = 'text-gray-600 dark:text-gray-400 preview-fade prose prose-sm dark:prose-invert max-w-none';
+                    preview.innerHTML = marked.parse(post.rawContent);
+                    
+                    cardBody.appendChild(title);
+                    cardBody.appendChild(preview);
+                    card.appendChild(cardBody);
+                    
+                    card.addEventListener('click', () => openModal(post));
+                    galleryGrid.appendChild(card);
+                });
+            }
+            
+            /**
+             * Handles the search bar input to filter posts in real-time.
+             */
+            searchBar.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredPosts = allPosts.filter(post => 
+                    post.title.toLowerCase().includes(searchTerm)
+                );
+                renderGallery(filteredPosts);
+            });
+
+            /**
+             * Opens the modal to display the full content of a selected post.
+             * This reveals the detailed chamber of inspection.
+             */
+            function openModal(post) {
+                // Correct relative links for images and files
+                const rawGitUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${post.path}`;
+                const baseUrl = rawGitUrl.substring(0, rawGitUrl.lastIndexOf('/'));
+                
+                const renderer = new marked.Renderer();
+                renderer.image = (href, title, text) => {
+                    const resolvedHref = href.startsWith('http') ? href : `${baseUrl}/${href}`;
+                    return `<img src="${resolvedHref}" alt="${text}" title="${title || ''}" class="rounded-lg shadow-md">`;
+                };
+                 renderer.link = (href, title, text) => {
+                    const resolvedHref = (href.startsWith('http') || href.startsWith('#')) ? href : `${baseUrl}/${href}`;
+                    return `<a href="${resolvedHref}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                };
+
+                modalContent.innerHTML = marked.parse(post.rawContent, { renderer });
+
+                // Calculate and display stats
+                const words = post.rawContent.match(/\b\w+\b/g) || [];
+                const chars = post.rawContent.length;
+                wordCountEl.textContent = `Words: ${words.length}`;
+                tokenCountEl.textContent = `Tokens: ~${Math.round(chars / 4)}`;
+                fileCountEl.textContent = `References: ${post.references.length}`;
+
+                // Display reference files
+                refFilesAnnex.innerHTML = '';
+                if (post.references.length > 0) {
+                    const refTitle = document.createElement('h4');
+                    refTitle.className = 'text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300';
+                    refTitle.textContent = 'Reference Files:';
+                    refFilesAnnex.appendChild(refTitle);
+
+                    const refList = document.createElement('div');
+                    refList.className = 'flex flex-wrap gap-2';
+                    post.references.forEach(ref => {
+                        const link = document.createElement('a');
+                        link.href = ref.url;
+                        link.textContent = ref.name;
+                        link.target = '_blank';
+                        link.className = 'px-3 py-1 bg-gray-200 dark:bg-gray-700 text-sm rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors';
+                        refList.appendChild(link);
+                    });
+                    refFilesAnnex.appendChild(refList);
+                }
+
+                // Setup "Copy Markdown" button
+                copyMarkdownBtn.onclick = () => {
+                    navigator.clipboard.writeText(post.rawContent).then(() => {
+                        copyMarkdownBtn.textContent = 'Copied!';
+                        setTimeout(() => { copyMarkdownBtn.textContent = 'Copy Markdown'; }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        // A fallback for older systems or insecure contexts
+                        const textArea = document.createElement("textarea");
+                        textArea.value = post.rawContent;
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            copyMarkdownBtn.textContent = 'Copied!';
+                            setTimeout(() => { copyMarkdownBtn.textContent = 'Copy Markdown'; }, 2000);
+                        } catch (err) {
+                             console.error('Fallback copy failed: ', err);
+                        }
+                        document.body.removeChild(textArea);
+                    });
+                };
+                
+                postModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+            
+            // Close modal functionality
+            closeModalBtn.addEventListener('click', () => {
+                postModal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            });
+            postModal.addEventListener('click', (e) => {
+                if (e.target === postModal) {
+                    postModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Instructions modal functionality
+            instructionsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                instructionsModal.classList.remove('hidden');
+            });
+            closeInstructionsBtn.addEventListener('click', () => {
+                instructionsModal.classList.add('hidden');
+            });
+            instructionsModal.addEventListener('click', (e) => {
+                if (e.target === instructionsModal) {
+                    instructionsModal.classList.add('hidden');
+                }
+            });
+
+
+            // Begin the great work
+            fetchAndBuildGallery();
+        });
+    </script>
 </body>
 </html>
