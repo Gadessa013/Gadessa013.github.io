@@ -3,388 +3,634 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Gallery</title>
-    <!-- Vitruvius's chosen materials: Tailwind CSS for beauty and Marked.js for utility -->
+    <title>A Gallery of Thoughts</title>
+    <!-- Vitruvius's chosen materials: Tailwind CSS, Marked.js, and Three.js for the cosmos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        /* A touch of custom masonry for our edifice */
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #000011; /* A deep space blue */
+            color: #e2e8f0; /* A light, readable text color */
         }
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        
-        /* The fade effect for truncated card previews */
-        .preview-fade {
-            position: relative;
-            max-height: 200px;
-            overflow: hidden;
-        }
-        .preview-fade::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
+        /* The celestial canvas must be fixed behind all other structures */
+        #starfield-canvas {
+            position: fixed;
+            top: 0;
             left: 0;
-            right: 0;
-            height: 50px;
-            background: linear-gradient(to bottom, transparent, white);
+            width: 100%;
+            height: 100%;
+            z-index: -1;
         }
-        .dark .preview-fade::after {
-             background: linear-gradient(to bottom, transparent, #1f2937); /* bg-gray-800 */
+        .gallery-card-content {
+            height: 250px;
+            overflow: hidden;
+            position: relative;
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
         }
+        .modal-content .prose h1, .modal-content .prose h2, .modal-content .prose h3 { margin-top: 0.5em; }
+        .modal-content .prose p { margin-bottom: 1em; }
+        .modal-content .prose a { color: #3b82f6; text-decoration: underline; }
+        .modal-content .prose ul, .modal-content .prose ol { margin-left: 1.5em; margin-bottom: 1em; }
+        .modal-content .prose li { margin-bottom: 0.5em; }
+        .loader {
+            border: 4px solid #4a5568;
+            border-top: 4px solid #e2e8f0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Ensure content cards have a dark text color for readability on white background */
+        .post-card, .modal-content .prose {
+             color: #1a202c;
+        }
+        /* Styles for the new category tabs */
+        .category-tab {
+            color: #94a3b8; /* slate-400 */
+            background-color: transparent;
+        }
+        .category-tab:hover {
+            color: #e2e8f0; /* slate-200 */
+        }
+        .category-tab.active-tab {
+            color: #000011; /* The dark background color for contrast */
+            background-color: #e2e8f0; /* slate-200 */
+        }
+        /* Vitruvius's Amendment: A special style for presenting poetry in the modal */
+        .modal-content.poem-style {
+            background-color: #ffffff; /* A clean, white background */
+        }
+        .modal-content.poem-style .prose {
+            /* Vitruvius's Correction: Use dark, high-contrast colors directly for readability. */
+            color: #374151; /* A standard dark gray for the poem's body */
+
+            text-align: center;
+            font-family: 'Lora', serif;
+            white-space: pre-wrap; /* This preserves the sacred line breaks of a poem */
+            font-size: 1.1rem; /* Slightly larger base text */
+            line-height: 1.8;
+            padding: 2.5rem 1rem; /* Add generous vertical padding */
+        }
+        /* Style the title (assuming it's the first element) */
+        .modal-content.poem-style .prose > :first-child {
+            color: #111827; /* A deep, rich black for the title */
+            font-size: 2.25rem;
+            font-weight: 400; /* Lora is elegant at a lighter weight */
+            margin-bottom: 2.5rem;
+            letter-spacing: 0.05em;
+        }
+        /* Add more space between stanzas (paragraphs) */
+        .modal-content.poem-style .prose p {
+            margin-bottom: 2rem;
+        }
+
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased">
+<body class="text-gray-200">
 
-    <!-- The Main Structure of our Digital Edifice -->
-    <div class="container mx-auto p-4 md:p-8">
-        
-        <!-- The Grand Entrance: Header and Search -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Markdown Gallery</h1>
-            <p class="mt-2 text-lg text-gray-600 dark:text-gray-400">A curated collection from a GitHub repository.</p>
-            <div class="mt-6 max-w-lg mx-auto">
-                <input type="text" id="search-bar" placeholder="Search posts by title..." class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
+    <!-- The celestial viewing port -->
+    <canvas id="starfield-canvas"></canvas>
+
+    <!-- The main edifice, now floating in the cosmos -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10">
+
+        <header class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-100 tracking-tight">A Gallery of Thoughts</h1>
+            
+            <!-- The new Navigational Tabs -->
+            <div id="category-tabs" class="flex justify-center space-x-2 sm:space-x-4 mt-8">
+                <button data-category="Prompt" class="category-tab active-tab px-4 py-2 text-lg font-semibold rounded-full transition-colors">Prompt</button>
+                <button data-category="Essay" class="category-tab px-4 py-2 text-lg font-semibold rounded-full transition-colors">Essay</button>
+                <button data-category="Poem" class="category-tab px-4 py-2 text-lg font-semibold rounded-full transition-colors">Poem</button>
+            </div>
+
+            <div class="mt-8 max-w-md mx-auto">
+                 <input type="text" id="search-input" placeholder="Search for a post..." class="w-full px-4 py-3 text-lg text-gray-700 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
             </div>
         </header>
 
-        <!-- The Gallery Hall: Where the Posts are Displayed -->
-        <main id="gallery-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Loading indicator: The masons at work -->
-            <div id="loading-indicator" class="col-span-full text-center py-16">
-                 <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                <p class="mt-4 text-gray-600 dark:text-gray-400">Fetching scrolls from the repository...</p>
-            </div>
+        <!-- New Token Warning Banner -->
+        <div id="token-warning" class="hidden max-w-4xl mx-auto mb-8 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-r-lg items-center justify-between">
+            <p><strong class="font-bold">Warning:</strong> No GitHub Personal Access Token found. You may encounter API rate limit errors. 
+                <button id="set-token-btn" class="ml-4 px-3 py-1 bg-yellow-500 text-white rounded-md font-bold hover:bg-yellow-600 transition-colors">Set Token</button>
+            </p>
+        </div>
+
+        <div id="loading-indicator" class="loader"></div>
+
+        <main id="content-gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Content blocks will appear here. -->
         </main>
 
-        <!-- The Footer: Architect's Signature and Instructions -->
-        <footer class="text-center mt-12">
-            <p class="text-gray-500 dark:text-gray-400">
-                A creation by Vitruvius. 
-                <a href="#" id="instructions-link" class="text-blue-500 hover:underline">How to structure posts?</a>
-            </p>
+        <footer class="text-center mt-16 text-gray-400">
+            <p>&copy; 2025 Gadessa013. All rights reserved.</p>
+            <p class="mt-2"><a href="#" id="instructions-trigger" class="text-blue-400 hover:underline">How to structure posts?</a></p>
         </footer>
-
     </div>
 
-    <!-- The Modal Viewer: A Chamber for Detailed Inspection -->
-    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div id="modal-content" class="prose dark:prose-invert max-w-none p-6 md:p-8 overflow-y-auto">
-                <!-- Rendered Markdown will be placed here -->
+    <!-- The Modal Viewing Chamber -->
+    <div id="modal-viewer" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col text-gray-800">
+            <div id="modal-image-container">
+                <!-- A placeholder for the title, for accessibility. It will be visually hidden. -->
+                <h2 id="modal-title" class="sr-only">Post Content</h2>
             </div>
-            <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
-                <div id="reference-files-annex" class="mb-4">
-                    <!-- Links to reference files will appear here -->
+            <div id="modal-content-area" class="overflow-y-auto modal-content flex-grow">
+                <!-- Main prose content is injected here -->
+            </div>
+            <div id="modal-references-annex" class="p-6 md:p-8 border-t border-gray-200 hidden">
+                <h4 class="font-semibold text-gray-800 mb-3">Reference Files</h4>
+                <div id="modal-references-list" class="space-y-2"></div>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-b-xl border-t border-gray-200 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span id="text-count" class="text-sm text-gray-500 font-medium"></span>
+                    <span id="token-count" class="text-sm text-gray-500 font-medium border-l border-gray-300 pl-3"></span>
+                    <span id="reference-count" class="text-sm text-gray-500 font-medium border-l border-gray-300 pl-3"></span>
                 </div>
-                <div class="flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-                    <div class="flex space-x-4 mb-2 md:mb-0">
-                        <span id="word-count"></span>
-                        <span id="token-count"></span>
-                        <span id="file-count"></span>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button id="copy-markdown-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Copy Markdown</button>
-                        <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Close</button>
-                    </div>
+                <div>
+                    <button id="modal-copy-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors mr-2">Copy Markdown</button>
+                    <button id="modal-close-btn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors">Close</button>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- The Instructions Modal: A Guide for Fellow Builders -->
-    <div id="instructions-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+
+    <!-- The Instructions Modal -->
+    <div id="instructions-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-800">
             <div class="p-6 md:p-8 overflow-y-auto">
-                <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">How to Structure Posts</h2>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p>To add content to this gallery, you must structure your files within the <code>/posts</code> directory of the configured GitHub repository.</p>
-                    <h4 class="font-semibold">1. Simple Post</h4>
-                    <p>A simple post is a single Markdown file placed directly inside the <code>/posts</code> directory.</p>
-                    <pre class="bg-gray-100 dark:bg-gray-700 p-2 rounded"><code>/posts
-  └── my-first-post.md</code></pre>
-                    
-                    <h4 class="font-semibold mt-4">2. Complex Post</h4>
-                    <p>A complex post is a folder within <code>/posts</code>. This folder must contain exactly one Markdown file, which will be treated as the main content. Any other files (images, PDFs, etc.) will be listed as downloadable reference files.</p>
-                    <p>Relative links to images within your Markdown (e.g., <code>![My Image](./diagram.png)</code>) will be automatically resolved.</p>
-                    <pre class="bg-gray-100 dark:bg-gray-700 p-2 rounded"><code>/posts
-  └── my-complex-project/
-      ├── main-article.md
-      ├── diagram.png
-      └── data-sheet.pdf</code></pre>
+                <h2 id="instructions-title" class="text-2xl font-bold text-gray-900 mb-6">The Blueprint for a Post with References</h2>
+                <div class="prose max-w-none text-gray-700">
+                    <p>To organize your gallery, specify a repository for each category in the script's configuration. The GitHub username remains the same for all.</p>
+                    <pre class="bg-gray-100 p-4 rounded-lg text-sm"><code>// === BUILDER'S CONFIGURATION ===
+const githubUsername = 'Gadessa013';
+const categories = {
+    'Prompt': { repo: 'Prompts', path: 'posts/' },
+    'Essay':  { repo: 'Prompts', path: 'essay/' },
+    'Poem':   { repo: 'Wandering_Thoughts', path: 'Poems/' }
+};
+// ===================================</code></pre>
+
+                    <h4 class="font-semibold text-gray-800 mt-6">Important: GitHub API Token</h4>
+                    <p>This gallery uses the GitHub API. Unauthenticated requests are limited, which can cause errors. To prevent this, it is highly recommended to create a <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=Markdown%20Gallery" target="_blank" class="text-blue-500 hover:underline">GitHub Personal Access Token</a> with <code>public_repo</code> scope. When the page loads, a "Set Token" button will appear if no token is found in your browser. Use this to save your token securely in your browser's local storage.</p>
+
+                    <h4 class="font-semibold text-gray-800 mt-6">File & Folder Structure</h4>
+                    <p>Within each repository and path specified above, you can structure your content. For a post that links to other files (like images or PDFs), create a dedicated folder for it.</p>
+                    <pre class="bg-gray-100 p-4 rounded-lg text-sm"><code>/posts/ &lt;-- In 'Prompts' repo
+└── project-alpha/
+    ├── index.md
+    ├── diagram.pdf
+    └── data.xls</code></pre>
+                    <p>When you inscribe a link to <code>diagram.pdf</code> from within your <code>index.md</code>, use a relative path like <code>[View Diagram](./diagram.pdf)</code>. The mechanism will automatically forge the correct public link.</p>
+
+                    <h4 class="font-semibold text-gray-800 mt-6">Adding a Cover Photo</h4>
+                    <p>For any post, you can add a cover image. Simply place an image file named <code>cover.jpg</code> (or <code>.png</code>, <code>.gif</code>) inside the post's folder. It will be automatically displayed as the card's background.</p>
                 </div>
             </div>
-            <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800 text-right">
-                <button id="close-instructions-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Close</button>
+            <div class="p-4 bg-gray-50 rounded-b-xl border-t border-gray-200 text-right">
+                <button id="instructions-close-btn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors">Close</button>
             </div>
         </div>
     </div>
 
+    <!-- Vitruvius's new construction: A dedicated chamber for viewing images in fullscreen -->
+    <div id="image-preview-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-[60] hidden">
+        <img id="fullscreen-image" src="" alt="Fullscreen Cover Image" class="max-w-full max-h-full object-contain">
+        <button id="image-preview-close-btn" class="absolute top-4 right-4 text-white text-4xl font-bold leading-none hover:opacity-75 transition-opacity">&times;</button>
+    </div>
 
-    <!-- The Engine of the Edifice: The JavaScript Framework -->
+
     <script>
+        // The Architect's mechanism for the Starfield
+        const initStarfield = () => {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#starfield-canvas'),
+            });
+
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.setZ(30);
+
+            // --- Starfield ---
+            const starVertices = [];
+            for (let i = 0; i < 10000; i++) {
+                const x = THREE.MathUtils.randFloatSpread(2000);
+                const y = THREE.MathUtils.randFloatSpread(2000);
+                const z = THREE.MathUtils.randFloatSpread(2000);
+                starVertices.push(x, y, z);
+            }
+
+            const starGeometry = new THREE.BufferGeometry();
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, sizeAttenuation: true });
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+            
+            let mouseX = 0;
+            let mouseY = 0;
+            document.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX - (window.innerWidth / 2);
+                mouseY = event.clientY - (window.innerHeight / 2);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                stars.rotation.x += 0.0001;
+                stars.rotation.y += 0.0002;
+                
+                // Parallax effect for the camera
+                camera.position.x += (mouseX * 0.00005 - camera.position.x) * 0.02;
+                camera.position.y += (-mouseY * 0.00005 - camera.position.y) * 0.02;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        };
+
+        // The Architect's mechanism for the Markdown Gallery
         document.addEventListener('DOMContentLoaded', () => {
+            initStarfield(); // Construct the cosmos first
             
-            // === CONFIGURATION: The architect's primary measurements ===
-            const GITHUB_USER = 'Gadessa013';
-            const GITHUB_REPO = 'Prompts';
-            const POSTS_DIR = 'posts';
-            // ==========================================================
-
-            const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${POSTS_DIR}`;
-
-            let allPosts = []; // A repository of all our processed scrolls
-            
-            const galleryGrid = document.getElementById('gallery-grid');
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const searchBar = document.getElementById('search-bar');
-            
-            // Modal elements
-            const postModal = document.getElementById('post-modal');
-            const modalContent = document.getElementById('modal-content');
-            const wordCountEl = document.getElementById('word-count');
+            const gallery = document.getElementById('content-gallery');
+            const modal = document.getElementById('modal-viewer');
+            const modalContent = document.getElementById('modal-content-area');
+            const closeModalBtn = document.getElementById('modal-close-btn');
+            const copyModalBtn = document.getElementById('modal-copy-btn');
+            const modalImageContainer = document.getElementById('modal-image-container');
+            const textCountEl = document.getElementById('text-count');
             const tokenCountEl = document.getElementById('token-count');
-            const fileCountEl = document.getElementById('file-count');
-            const copyMarkdownBtn = document.getElementById('copy-markdown-btn');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-            const refFilesAnnex = document.getElementById('reference-files-annex');
-            
-            // Instructions Modal elements
+            const referenceCountEl = document.getElementById('reference-count');
+            const referencesAnnex = document.getElementById('modal-references-annex');
+            const referencesList = document.getElementById('modal-references-list');
+            const searchInput = document.getElementById('search-input');
+            const loadingIndicator = document.getElementById('loading-indicator');
             const instructionsModal = document.getElementById('instructions-modal');
-            const instructionsLink = document.getElementById('instructions-link');
-            const closeInstructionsBtn = document.getElementById('close-instructions-btn');
+            const instructionsTrigger = document.getElementById('instructions-trigger');
+            const instructionsCloseBtn = document.getElementById('instructions-close-btn');
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            const tokenWarning = document.getElementById('token-warning');
+            const setTokenBtn = document.getElementById('set-token-btn');
+            // --- New variables for the image previewer ---
+            const imagePreviewModal = document.getElementById('image-preview-modal');
+            const fullscreenImage = document.getElementById('fullscreen-image');
+            const imagePreviewCloseBtn = document.getElementById('image-preview-close-btn');
 
-            /**
-             * Fetches the content from the GitHub repository and processes each item.
-             * This is the master function that orchestrates the construction.
-             */
-            async function fetchAndBuildGallery() {
+            let textToCopy = '';
+
+            // === BUILDER'S CONFIGURATION ===
+            const githubUsername = 'Gadessa013';
+            const categories = {
+                'Prompt': { repo: 'Prompts', path: 'posts/' },
+                'Essay':  { repo: 'Prompts', path: 'essay/' },
+                'Poem':   { repo: 'Wandering_Thoughts', path: 'Poems/' }
+            };
+            let activeCategory = 'Prompt';
+            // ===================================
+            
+            const defaultGithubPat = "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";
+            let githubPat = localStorage.getItem('githubApiToken') || defaultGithubPat;
+
+            if (!githubPat) {
+                tokenWarning.classList.remove('hidden');
+            }
+            
+            setTokenBtn.addEventListener('click', () => {
+                const token = prompt('Please paste your GitHub Personal Access Token:', '');
+                if (token && token.trim() !== '') {
+                    localStorage.setItem('githubApiToken', token.trim());
+                    tokenWarning.innerHTML = '<p><strong class="font-bold">Success!</strong> Token saved. The page will now reload.</p>';
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+            
+            const apiBaseUrl = `https://api.github.com/repos/${githubUsername}/`;
+
+            const openModal = (htmlContent, markdownText, referenceFiles, coverPhotoUrl) => {
+                modalContent.classList.remove('poem-style');
+                modalContent.classList.add('p-6', 'md:p-8');
+                
+                const isSpecialCategory = activeCategory === 'Poem' || activeCategory === 'Essay';
+                
+                if (coverPhotoUrl) {
+                    const clickableClass = isSpecialCategory ? 'cursor-pointer' : '';
+                    modalImageContainer.innerHTML = `<img src="${coverPhotoUrl}" alt="Cover Photo" id="modal-cover-image" class="w-full h-72 object-cover rounded-t-xl ${clickableClass}">`;
+                    modalImageContainer.classList.remove('hidden');
+
+                    if (isSpecialCategory) {
+                        const modalCoverImage = document.getElementById('modal-cover-image');
+                        if(modalCoverImage) {
+                           modalCoverImage.addEventListener('click', () => {
+                                fullscreenImage.src = coverPhotoUrl;
+                                imagePreviewModal.classList.remove('hidden');
+                            });
+                        }
+                    }
+                } else {
+                    modalImageContainer.innerHTML = '';
+                    modalImageContainer.classList.add('hidden');
+                }
+
+                if (activeCategory === 'Poem') {
+                    modalContent.classList.add('poem-style');
+                    modalContent.classList.remove('p-6', 'md:p-8');
+                } else {
+                    modalContent.classList.remove('poem-style');
+                }
+
+                modalContent.innerHTML = `<div class="prose max-w-none">${htmlContent}</div>`;
+
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                textToCopy = markdownText;
+                const wordCount = markdownText.trim().split(/\s+/).filter(Boolean).length;
+                textCountEl.textContent = `${wordCount} words`;
+                
+                if (activeCategory === 'Poem') {
+                    tokenCountEl.style.display = 'none';
+                } else {
+                    tokenCountEl.style.display = 'inline';
+                    const characterCount = markdownText.length;
+                    const estimatedTokens = Math.ceil(characterCount / 4);
+                    tokenCountEl.textContent = `~${estimatedTokens} tokens`;
+                }
+
+                if (activeCategory === 'Poem' || activeCategory === 'Essay') {
+                    copyModalBtn.style.display = 'none';
+                } else {
+                    copyModalBtn.style.display = 'inline-block';
+                    copyModalBtn.textContent = 'Copy Markdown';
+                }
+
+                if (referenceFiles && referenceFiles.length > 0) {
+                    referenceCountEl.textContent = `${referenceFiles.length} references`;
+                    referenceCountEl.style.display = 'inline';
+                    referencesAnnex.classList.remove('hidden');
+                    referencesList.innerHTML = '';
+                    referenceFiles.forEach(file => {
+                        const refLink = document.createElement('a');
+                        refLink.href = file.download_url;
+                        refLink.textContent = file.name;
+                        refLink.target = "_blank";
+                        refLink.className = "block px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-blue-600 transition-colors";
+                        referencesList.appendChild(refLink);
+                    });
+                } else {
+                    referenceCountEl.style.display = 'none';
+                    referencesAnnex.classList.add('hidden');
+                }
+            };
+
+            const closeImagePreview = () => {
+                imagePreviewModal.classList.add('hidden');
+            };
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                closeImagePreview(); // Also close image preview
+                if (instructionsModal.classList.contains('hidden')) {
+                    document.body.style.overflow = '';
+                }
+            };
+
+            const copyMarkdown = () => {
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
                 try {
-                    const response = await fetch(API_URL);
+                    document.execCommand('copy');
+                    copyModalBtn.textContent = 'Copied!';
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    copyModalBtn.textContent = 'Copy Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => { copyModalBtn.textContent = 'Copy Markdown'; }, 2000);
+            };
+
+            closeModalBtn.addEventListener('click', closeModal);
+            copyModalBtn.addEventListener('click', copyMarkdown);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            const openInstructions = (e) => {
+                e.preventDefault();
+                instructionsModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeInstructions = () => {
+                instructionsModal.classList.add('hidden');
+                 if (modal.classList.contains('hidden')) {
+                    document.body.style.overflow = '';
+                }
+            };
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (!imagePreviewModal.classList.contains('hidden')) {
+                        closeImagePreview();
+                    } else if (!modal.classList.contains('hidden')) {
+                        closeModal();
+                    } else if (!instructionsModal.classList.contains('hidden')) {
+                        closeInstructions();
+                    }
+                }
+            });
+            
+            // --- Event listeners for the new image previewer ---
+            imagePreviewCloseBtn.addEventListener('click', closeImagePreview);
+            imagePreviewModal.addEventListener('click', (e) => {
+                if (e.target !== fullscreenImage) {
+                    closeImagePreview();
+                }
+            });
+
+            instructionsTrigger.addEventListener('click', openInstructions);
+            instructionsCloseBtn.addEventListener('click', closeInstructions);
+            instructionsModal.addEventListener('click', (e) => {
+                if (e.target === instructionsModal) closeInstructions();
+            });
+
+            const formatTitle = (name) => {
+                return name.replace(/\.(md|markdown)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+            };
+
+            const fetchAndDisplayPost = async (file, referenceFiles = [], currentRepo, coverPhotoUrl = null) => {
+                try {
+                    // NOTE: download_url does not require auth token
+                    const response = await fetch(file.download_url);
+                    if (!response.ok) throw new Error(`Status: ${response.status}`);
+                    let markdownText = await response.text();
+                    const fileDirectory = file.path.substring(0, file.path.lastIndexOf('/') + 1);
+                    const rawContentBaseUrl = `https://raw.githubusercontent.com/${githubUsername}/${currentRepo}/main/${fileDirectory}`;
+                    markdownText = markdownText.replace(/(\]\(|\ssrc=")\.\//g, `$1${rawContentBaseUrl}`);
+                    const htmlContent = marked.parse(markdownText);
+                    const postBlock = document.createElement('div');
+                    const title = formatTitle(file.name);
+                    postBlock.className = 'post-card bg-white rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden cursor-pointer';
+                    postBlock.dataset.title = title.toLowerCase();
+
+                    const isSpecialCategory = activeCategory === 'Poem' || activeCategory === 'Essay';
+
+                    if (coverPhotoUrl) {
+                        if (isSpecialCategory) {
+                            postBlock.classList.add('aspect-square');
+                        }
+
+                        postBlock.innerHTML = `
+                            <div class="relative h-full w-full ${isSpecialCategory ? 'bg-black' : ''}">
+                                <img src="${coverPhotoUrl}" alt="Cover for ${title}" class="absolute h-full w-full ${isSpecialCategory ? 'object-contain' : 'object-cover'}">
+                                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-end p-4">
+                                    <h2 class="text-xl font-bold text-white">${title}</h2>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // The existing card structure for non-poem or poems without covers
+                        postBlock.classList.add('flex', 'flex-col');
+                        postBlock.innerHTML = `
+                            <div class="p-6 border-b border-gray-200">
+                                 <h2 class="text-xl font-bold text-gray-800 truncate">${title}</h2>
+                            </div>
+                            <div class="p-6 gallery-card-content">
+                                <div class="prose max-w-none">${htmlContent}</div>
+                            </div>
+                        `;
+                    }
+                    
+                    gallery.appendChild(postBlock);
+                    postBlock.addEventListener('click', () => openModal(htmlContent, markdownText, referenceFiles, coverPhotoUrl));
+                } catch (error) {
+                    console.error(`Error fetching post: ${file.name}`, error);
+                    const errorBlock = document.createElement('div');
+                    const title = formatTitle(file.name);
+                    errorBlock.className = 'post-card bg-red-100 border border-red-300 rounded-xl shadow-lg p-6 flex flex-col';
+                    errorBlock.dataset.title = title.toLowerCase();
+                    errorBlock.innerHTML = `
+                        <h2 class="text-xl font-bold text-red-800 truncate">${title}</h2>
+                        <p class="text-red-700 mt-4">Failed to load content for this post.</p>
+                        <p class="text-xs text-red-600 mt-2">${error.message}</p>
+                    `;
+                    gallery.appendChild(errorBlock);
+                }
+            };
+            
+            const processDirectory = async (items, currentRepo, fetchHeaders) => {
+                const fetchPromises = [];
+                for (const item of items) {
+                    if (item.type === 'file' && item.name.endsWith('.md')) {
+                        fetchPromises.push(fetchAndDisplayPost(item, [], currentRepo, null));
+                    } else if (item.type === 'dir') {
+                        const dirResponse = await fetch(item.url, { headers: fetchHeaders }); // Use the full URL provided by the API
+                        const dirItems = await dirResponse.json();
+                        const mainMdFile = dirItems.find(f => f.type === 'file' && f.name.endsWith('.md'));
+                        const coverPhotoFile = dirItems.find(f => f.type === 'file' && /^(cover|thumbnail)\.(jpg|jpeg|png|gif)$/i.test(f.name));
+                        const coverPhotoUrl = coverPhotoFile ? coverPhotoFile.download_url : null;
+                        
+                        const referenceFiles = dirItems.filter(f => f.name !== mainMdFile?.name && f.name !== coverPhotoFile?.name);
+                        
+                        if (mainMdFile) {
+                            const postFile = { ...mainMdFile, name: `${item.name}.md` };
+                            fetchPromises.push(fetchAndDisplayPost(postFile, referenceFiles, currentRepo, coverPhotoUrl));
+                        }
+                    }
+                }
+                await Promise.all(fetchPromises);
+            };
+
+            const fetchPostsList = async (categoryConfig) => {
+                gallery.innerHTML = '';
+                loadingIndicator.style.display = 'block';
+                const { repo, path } = categoryConfig;
+                const apiUrl = `${apiBaseUrl}${repo}/contents/${path}`;
+                
+                const fetchHeaders = {};
+                if (githubPat) {
+                    fetchHeaders['Authorization'] = `token ${githubPat}`;
+                }
+
+                try {
+                    const response = await fetch(apiUrl, { headers: fetchHeaders });
                     if (!response.ok) {
-                        throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+                        let errorMsg = `HTTP error! status: ${response.status}`;
+                        if(response.status === 403) {
+                             errorMsg += " - This is likely due to GitHub API rate limiting. Please set a Personal Access Token or wait an hour.";
+                        }
+                        throw new Error(errorMsg);
                     }
                     const items = await response.json();
-                    
-                    const postPromises = items.map(processRepoItem);
-                    allPosts = await Promise.all(postPromises);
-                    allPosts = allPosts.filter(p => p !== null); // Filter out any failed items
-
-                    renderGallery(allPosts);
-
+                    if (Array.isArray(items)) {
+                        await processDirectory(items, repo, fetchHeaders);
+                        // Vitruvius's Utilitas Amendment: Handle the empty state
+                        if (gallery.children.length === 0) {
+                            gallery.innerHTML = `<div class="col-span-full p-8 bg-gray-900 bg-opacity-50 text-gray-400 rounded-lg text-center">No posts were found in this category.</div>`;
+                        }
+                    } else if (items.message) {
+                        throw new Error(`GitHub API Error: ${items.message}`);
+                    }
+                    else {
+                        throw new Error("Received non-array response from GitHub API");
+                    }
                 } catch (error) {
-                    console.error("Error building the gallery:", error);
-                    galleryGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Failed to load posts. Check the browser console for details.</p>`;
+                    console.error('Failed to fetch posts:', error);
+                    gallery.innerHTML = `<div class="col-span-full p-4 bg-red-900 bg-opacity-50 text-red-200 rounded-lg text-center">${error.message}</div>`;
                 } finally {
                     loadingIndicator.style.display = 'none';
                 }
-            }
+            };
 
-            /**
-             * Processes a single item from the repository (file or directory).
-             * Determines if it's a simple or complex post and gathers its data.
-             */
-            async function processRepoItem(item) {
-                if (item.type === 'file' && item.name.endsWith('.md')) {
-                    // It's a Simple Post
-                    try {
-                        const content = await fetch(item.download_url).then(res => res.text());
-                        return {
-                            type: 'simple',
-                            title: item.name.replace('.md', ''),
-                            rawContent: content,
-                            path: item.path,
-                            downloadUrl: item.download_url,
-                            references: []
-                        };
-                    } catch (error) {
-                        console.error(`Failed to fetch content for ${item.name}:`, error);
-                        return null;
-                    }
-
-                } else if (item.type === 'dir') {
-                    // It's a Complex Post
-                    try {
-                        const dirContents = await fetch(item.url).then(res => res.json());
-                        const markdownFile = dirContents.find(f => f.name.endsWith('.md'));
-                        
-                        if (!markdownFile) return null; // Skip folders without a .md file
-
-                        const content = await fetch(markdownFile.download_url).then(res => res.text());
-                        const references = dirContents.filter(f => !f.name.endsWith('.md'));
-
-                        return {
-                            type: 'complex',
-                            title: item.name,
-                            rawContent: content,
-                            path: item.path,
-                            downloadUrl: markdownFile.download_url,
-                            references: references.map(ref => ({ name: ref.name, url: ref.download_url, path: ref.path }))
-                        };
-                    } catch (error) {
-                         console.error(`Failed to process directory ${item.name}:`, error);
-                        return null;
-                    }
-                }
-                return null; // Ignore other file types
-            }
-
-            /**
-             * Renders the gallery of posts onto the page.
-             * This function lays the stones in the gallery hall.
-             */
-            function renderGallery(posts) {
-                galleryGrid.innerHTML = ''; // Clear previous content
-                if (posts.length === 0) {
-                     galleryGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">No matching posts found.</p>`;
-                     return;
-                }
-
-                posts.forEach(post => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col';
-                    
-                    const cardBody = document.createElement('div');
-                    cardBody.className = 'p-6 flex-grow';
-
-                    const title = document.createElement('h2');
-                    title.className = 'text-xl font-bold mb-2 text-gray-900 dark:text-white';
-                    title.textContent = post.title.replace(/[-_]/g, ' ');
-
-                    const preview = document.createElement('div');
-                    preview.className = 'text-gray-600 dark:text-gray-400 preview-fade prose prose-sm dark:prose-invert max-w-none';
-                    preview.innerHTML = marked.parse(post.rawContent);
-                    
-                    cardBody.appendChild(title);
-                    cardBody.appendChild(preview);
-                    card.appendChild(cardBody);
-                    
-                    card.addEventListener('click', () => openModal(post));
-                    galleryGrid.appendChild(card);
-                });
-            }
-            
-            /**
-             * Handles the search bar input to filter posts in real-time.
-             */
-            searchBar.addEventListener('input', (e) => {
+            searchInput.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                const filteredPosts = allPosts.filter(post => 
-                    post.title.toLowerCase().includes(searchTerm)
-                );
-                renderGallery(filteredPosts);
+                const posts = document.querySelectorAll('.post-card');
+                posts.forEach(post => {
+                    const hasCover = post.querySelector('img');
+                    if (post.dataset.title.includes(searchTerm)) {
+                        post.style.display = hasCover ? 'block' : 'flex';
+                    } else {
+                        post.style.display = 'none';
+                    }
+                });
             });
 
-            /**
-             * Opens the modal to display the full content of a selected post.
-             * This reveals the detailed chamber of inspection.
-             */
-            function openModal(post) {
-                // Correct relative links for images and files
-                const rawGitUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${post.path}`;
-                const baseUrl = rawGitUrl.substring(0, rawGitUrl.lastIndexOf('/'));
-                
-                const renderer = new marked.Renderer();
-                renderer.image = (href, title, text) => {
-                    const resolvedHref = href.startsWith('http') ? href : `${baseUrl}/${href}`;
-                    return `<img src="${resolvedHref}" alt="${text}" title="${title || ''}" class="rounded-lg shadow-md">`;
-                };
-                 renderer.link = (href, title, text) => {
-                    const resolvedHref = (href.startsWith('http') || href.startsWith('#')) ? href : `${baseUrl}/${href}`;
-                    return `<a href="${resolvedHref}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-                };
-
-                modalContent.innerHTML = marked.parse(post.rawContent, { renderer });
-
-                // Calculate and display stats
-                const words = post.rawContent.match(/\b\w+\b/g) || [];
-                const chars = post.rawContent.length;
-                wordCountEl.textContent = `Words: ${words.length}`;
-                tokenCountEl.textContent = `Tokens: ~${Math.round(chars / 4)}`;
-                fileCountEl.textContent = `References: ${post.references.length}`;
-
-                // Display reference files
-                refFilesAnnex.innerHTML = '';
-                if (post.references.length > 0) {
-                    const refTitle = document.createElement('h4');
-                    refTitle.className = 'text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300';
-                    refTitle.textContent = 'Reference Files:';
-                    refFilesAnnex.appendChild(refTitle);
-
-                    const refList = document.createElement('div');
-                    refList.className = 'flex flex-wrap gap-2';
-                    post.references.forEach(ref => {
-                        const link = document.createElement('a');
-                        link.href = ref.url;
-                        link.textContent = ref.name;
-                        link.target = '_blank';
-                        link.className = 'px-3 py-1 bg-gray-200 dark:bg-gray-700 text-sm rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors';
-                        refList.appendChild(link);
-                    });
-                    refFilesAnnex.appendChild(refList);
-                }
-
-                // Setup "Copy Markdown" button
-                copyMarkdownBtn.onclick = () => {
-                    navigator.clipboard.writeText(post.rawContent).then(() => {
-                        copyMarkdownBtn.textContent = 'Copied!';
-                        setTimeout(() => { copyMarkdownBtn.textContent = 'Copy Markdown'; }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        // A fallback for older systems or insecure contexts
-                        const textArea = document.createElement("textarea");
-                        textArea.value = post.rawContent;
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try {
-                            document.execCommand('copy');
-                            copyMarkdownBtn.textContent = 'Copied!';
-                            setTimeout(() => { copyMarkdownBtn.textContent = 'Copy Markdown'; }, 2000);
-                        } catch (err) {
-                             console.error('Fallback copy failed: ', err);
-                        }
-                        document.body.removeChild(textArea);
-                    });
-                };
-                
-                postModal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            }
-            
-            // Close modal functionality
-            closeModalBtn.addEventListener('click', () => {
-                postModal.classList.add('hidden');
-                document.body.style.overflow = ''; // Restore scrolling
-            });
-            postModal.addEventListener('click', (e) => {
-                if (e.target === postModal) {
-                    postModal.classList.add('hidden');
-                    document.body.style.overflow = '';
-                }
-            });
-            
-            // Instructions modal functionality
-            instructionsLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                instructionsModal.classList.remove('hidden');
-            });
-            closeInstructionsBtn.addEventListener('click', () => {
-                instructionsModal.classList.add('hidden');
-            });
-            instructionsModal.addEventListener('click', (e) => {
-                if (e.target === instructionsModal) {
-                    instructionsModal.classList.add('hidden');
-                }
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    categoryTabs.forEach(t => t.classList.remove('active-tab'));
+                    tab.classList.add('active-tab');
+                    activeCategory = tab.dataset.category;
+                    fetchPostsList(categories[activeCategory]);
+                });
             });
 
-
-            // Begin the great work
-            fetchAndBuildGallery();
+            // Initial fetch
+            fetchPostsList(categories[activeCategory]);
         });
     </script>
 </body>
 </html>
+
